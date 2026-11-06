@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Kraken APAC Panel Prep</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+[hidden]{display:none!important} body{margin:0} img{max-width:100%}
+/* Layout: sticky tab bar over a single reading column; deals view is a tool (filters → timeline → table) */
+:root{
+  --bg:#f5f4f8; --surface:#ffffff; --sunk:#ecebf2; --fg:#18161f; --muted:#5f5b6e; --line:#dcd9e6;
+  --accent:#5a43d4; --accent-soft:#e9e5fb;
+  --ok:#0e7a5f; --ok-soft:#dcf2ea; --warn:#a35f00; --warn-soft:#fbeed8; --risk:#b3261e; --risk-soft:#fbe3e1;
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121118; --surface:#1b1a23; --sunk:#24222e; --fg:#ecebf3; --muted:#a6a2b6; --line:#33303f;
+  --accent:#a797ff; --accent-soft:#2b2550;
+  --ok:#5fd0ab; --ok-soft:#163a30; --warn:#f0b357; --warn-soft:#3d2c12; --risk:#ff8a80; --risk-soft:#43201e; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121118; --surface:#1b1a23; --sunk:#24222e; --fg:#ecebf3; --muted:#a6a2b6; --line:#33303f;
+  --accent:#a797ff; --accent-soft:#2b2550;
+  --ok:#5fd0ab; --ok-soft:#163a30; --warn:#f0b357; --warn-soft:#3d2c12; --risk:#ff8a80; --risk-soft:#43201e; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.55 var(--f-body)}
+a{color:var(--accent)}
+a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,tr:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{padding-block:28px 12px}
+.eyebrow{font:500 12px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font:700 clamp(28px,4.4vw,42px)/1.08 var(--f-display);margin:10px 0 8px;text-wrap:balance;letter-spacing:-.01em}
+h2{font:700 24px/1.2 var(--f-display);margin:0 0 12px;text-wrap:balance}
+h3{font:600 17px/1.3 var(--f-body);margin:0 0 6px}
+.lede{color:var(--muted);max-width:68ch;margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+nav.tabs .wrap{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+nav.tabs a{flex:none;text-decoration:none;color:var(--muted);font-weight:600;padding:12px 12px 11px;border-bottom:2px solid transparent}
+nav.tabs a[aria-current="page"]{color:var(--fg);border-color:var(--accent)}
+main{padding-block:24px 64px}
+section.view{display:grid;gap:22px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.stat b{display:block;font:700 26px/1.1 var(--f-display);font-variant-numeric:tabular-nums}
+.stat span{color:var(--muted);font-size:13px}
+.filters{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
+.filters label{display:grid;gap:4px;font-size:12px;color:var(--muted);font-weight:600}
+select,input[type=search]{font:inherit;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 10px;min-width:0}
+input[type=search]{width:min(240px,100%)}
+.chk{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--muted);padding-bottom:8px}
+button.reset{font:inherit;font-size:13px;background:none;border:1px solid var(--line);color:var(--fg);border-radius:8px;padding:7px 12px;cursor:pointer}
+.tl{overflow-x:auto}
+.tl svg{display:block;min-width:720px;width:100%;height:auto}
+.tl text{fill:var(--muted);font:11px var(--f-mono)}
+.tl .lbl{fill:var(--fg);font:600 11px var(--f-body)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:860px;font-size:14px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 12px var(--f-body);color:var(--muted);text-transform:uppercase;letter-spacing:.05em;background:var(--sunk);white-space:nowrap}
+th button{all:unset;cursor:pointer}
+th button:focus-visible{outline:2px solid var(--accent)}
+th[aria-sort] button::after{content:" ↕";opacity:.4}
+th[aria-sort="ascending"] button::after{content:" ↑";opacity:1}
+th[aria-sort="descending"] button::after{content:" ↓";opacity:1}
+tr.row{cursor:pointer}
+tr.row:hover td{background:var(--sunk)}
+tr.row.older td{opacity:.75}
+td.num,.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+td .name{font-weight:600}
+td .sub{color:var(--muted);font-size:12.5px}
+.pill{display:inline-block;font:500 11.5px/1 var(--f-body);padding:5px 8px;border-radius:999px;white-space:nowrap}
+.p-ok{background:var(--ok-soft);color:var(--ok)}
+.p-warn{background:var(--warn-soft);color:var(--warn)}
+.p-acc{background:var(--accent-soft);color:var(--accent)}
+.p-risk{background:var(--risk-soft);color:var(--risk)}
+.p-mute{background:var(--sunk);color:var(--muted)}
+.price-d{color:var(--ok);font-weight:500}
+.price-u{color:var(--warn)}
+tr.detail td{background:var(--sunk);padding:16px 18px}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px 24px}
+.dgrid div{min-width:0}
+.k{font:500 11px var(--f-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:3px}
+.src{font-size:12.5px;margin-top:12px}
+.src a{margin-right:12px;word-break:break-word}
+.flag{font-size:12px;color:var(--warn)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:grid;gap:8px;align-content:start;min-width:0}
+.card .head{display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap}
+.card ul,.panel ul{margin:0;padding-left:18px}
+.card li,.panel li{margin:3px 0}
+.note{font-size:13px;color:var(--muted)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
+.cols>*{min-width:0}
+.callout{border-left:3px solid var(--warn);background:var(--warn-soft);padding:12px 14px;border-radius:0 8px 8px 0;font-size:14px}
+.callout.acc{border-color:var(--accent);background:var(--accent-soft)}
+dl.kv{display:grid;grid-template-columns:max-content 1fr;gap:6px 14px;margin:0}
+dl.kv dt{color:var(--muted);font-size:13px}
+dl.kv dd{margin:0;min-width:0}
+details.q{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:0}
+details.q summary{cursor:pointer;padding:14px 16px;font-weight:600;list-style:none;display:flex;gap:10px}
+details.q summary::-webkit-details-marker{display:none}
+details.q summary::before{content:"+";font-family:var(--f-mono);color:var(--accent)}
+details.q[open] summary::before{content:"−"}
+details.q .a{padding:0 16px 14px 34px;color:var(--fg)}
+details.q .a p{margin:0 0 8px}
+.qlist{display:grid;gap:8px}
+footer{color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padding-block:16px 32px}
+@media (max-width:560px){dl.kv{grid-template-columns:1fr} dl.kv dt{margin-top:6px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<header class="top wrap">
+  <div class="eyebrow">Payward, Inc. · Kraken · as of 6 Nov 2026</div>
+  <h1>Kraken APAC panel prep</h1>
+  <p class="lede">Payward's acquisitions since late 2021, its footprint across Asia-Pacific, the company picture, and a brief for the Senior Counsel – Product (APAC) panel. Click any deal for details and sources.</p>
+</header>
+
+<nav class="tabs" aria-label="Sections"><div class="wrap">
+  <a href="#deals">Acquisitions</a>
+  <a href="#apac">APAC footprint</a>
+  <a href="#company">Company</a>
+  <a href="#brief">Interview brief</a>
+  <a href="#qa">Q&amp;A prep</a>
+</div></nav>
+
+<main class="wrap">
+
+<!-- ============ DEALS ============ -->
+<section class="view" id="v-deals" aria-labelledby="h-deals">
+  <h2 id="h-deals" hidden>Acquisitions</h2>
+  <div class="stats" id="stats"></div>
+
+  <div class="panel">
+    <div class="filters">
+      <label for="f-q">Search<input type="search" id="f-q" placeholder="Name, founder, keyword"></label>
+      <label for="f-year">Year<select id="f-year"><option value="">All years</option></select></label>
+      <label for="f-region">Region<select id="f-region"><option value="">All regions</option></select></label>
+      <label for="f-sector">Sector<select id="f-sector"><option value="">All sectors</option></select></label>
+      <label for="f-status">Status<select id="f-status"><option value="">All statuses</option></select></label>
+      <label class="chk" for="f-older"><input type="checkbox" id="f-older"> Show pre-2021 APAC context</label>
+      <button class="reset" id="f-reset" type="button">Clear filters</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Timeline</h3>
+    <div class="tl" id="timeline"></div>
+    <div class="legend">
+      <span><i style="background:var(--ok)"></i>Price disclosed (size = price)</span>
+      <span><i style="border:2px solid var(--warn);background:transparent"></i>Undisclosed</span>
+      <span><i style="background:var(--accent)"></i>APAC target</span>
+    </div>
+  </div>
+
+  <div class="tablewrap">
+    <table id="deals">
+      <thead><tr>
+        <th aria-sort="descending" data-k="date"><button type="button">Announced</button></th>
+        <th data-k="name"><button type="button">Target</button></th>
+        <th data-k="region"><button type="button">Region</button></th>
+        <th data-k="sector"><button type="button">Sector</button></th>
+        <th data-k="price"><button type="button">Price</button></th>
+        <th data-k="status"><button type="button">Status</button></th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <p class="note">Prices marked "up to" include contingent or stock components. Kraken generally does not disclose deal terms, so treat "undisclosed" as the default. Founder names flagged "verify" come from general knowledge, not the sources read for this page.</p>
+</section>
+
+<!-- ============ APAC ============ -->
+<section class="view" id="v-apac" hidden aria-labelledby="h-apac">
+  <div>
+    <h2 id="h-apac">APAC footprint by market</h2>
+    <p class="lede">What Kraken/Payward holds or is pursuing in each market, and where the job description puts the role. The JD says the hire <b>owns</b> licensing in Kazakhstan, Pakistan and the Philippines, <b>supports</b> other APAC markets, and supports Payward licensing in Singapore and Hong Kong.</p>
+  </div>
+  <div class="cards" id="markets"></div>
+</section>
+
+<!-- ============ COMPANY ============ -->
+<section class="view" id="v-company" hidden aria-labelledby="h-company">
+  <h2 id="h-company">Company picture</h2>
+  <div class="stats">
+    <div class="stat"><b>$508M</b><span>Q2 2026 adjusted revenue, +17% YoY</span></div>
+    <div class="stat"><b>6.6M</b><span>Funded accounts, Q2 2026 (+42%)</span></div>
+    <div class="stat"><b>$40B</b><span>Customer assets, Q2 2026</span></div>
+    <div class="stat"><b>$13.3–21B</b><span>Valuation range implied by 2025–26 rounds</span></div>
+  </div>
+  <div class="cols">
+    <div class="panel">
+      <h3>Leadership</h3>
+      <dl class="kv">
+        <dt>Co-CEOs</dt><dd>Arjun Sethi (co-CEO from late 2024, previously board member and Tribe Capital co-founder) and David Ripley (CEO since 2022, previously COO). Sethi is the public face on deals and IPO strategy.</dd>
+        <dt>Chief Legal Officer</dt><dd>Ben Gray, since Feb 2025. Previously Global GC at Paxos, a federal financial regulator, and compliance at Block. Oversees legal, compliance and enterprise risk. Succeeded Marco Santori.</dd>
+        <dt>Chief Commercial Officer</dt><dd>Mark Greenberg (quoted on the Magic wallet deal).</dd>
+        <dt>APAC</dt><dd>Jonathon Miller: Bit Trade founder, MD Australia from 2020, later "GM for Australia and Rest of World", now Head of APAC Expansion.</dd>
+      </dl>
+      <p class="src"><a href="https://www.businesswire.com/news/home/20250204162000/en/Kraken-Welcomes-Ben-Gray-as-Chief-Legal-Officer">Business Wire: Ben Gray</a><a href="https://www.theblock.co/post/323773/kraken-sheds-organizational-layers-as-board-member-arjun-sethi-steps-up-as-co-ceo">The Block: Sethi co-CEO</a></p>
+    </div>
+    <div class="panel">
+      <h3>IPO and funding</h3>
+      <ul>
+        <li><b>Nov 2025:</b> $800M raise at a <b>$20B</b> valuation, including $200M from Citadel Securities. Confidential draft S-1 filed 19 Nov 2025.</li>
+        <li><b>Mar 2026:</b> IPO prep paused on weak markets.</li>
+        <li><b>Apr 2026:</b> Deutsche Börse buys 1.5% for $200M (secondary), implying about <b>$13.3B</b>.</li>
+        <li><b>Sep 2026:</b> Nasdaq agrees a $100M investment at a reported <b>$21B</b>. Listing now Q2 2027 at the earliest.</li>
+      </ul>
+      <p class="src"><a href="https://www.financemagnates.com/cryptocurrency/kraken-parent-pushes-ipo-to-q2-2027-at-earliest/">Finance Magnates: IPO to Q2 2027</a><a href="https://fortune.com/2026/10/14/kraken-parent-company-payward-first-crypto-firm-european-bank-purchase/">Fortune: Saldo / Nasdaq</a></p>
+    </div>
+    <div class="panel">
+      <h3>Licensing and regulatory posture</h3>
+      <ul>
+        <li><b>US:</b> SEC staking/exchange case dismissed in 2025. Limited-purpose Fed master account for Kraken Financial (Mar 2026). OCC national trust charter application (May 2026). Full CFTC derivatives stack (FCM, DCM, DCO) via Bitnomial and Small Exchange.</li>
+        <li><b>EU:</b> Central Bank of Ireland e-money licence and MiCA authorisation. Saldo Bank purchase would add an ECB-licensed credit institution (close expected 2027).</li>
+        <li><b>Middle East and offshore:</b> VARA preliminary authorisation for Payward FZCO (May 2026). BVI VASP registrations (Jun 2026).</li>
+        <li><b>APAC:</b> see the APAC tab.</li>
+      </ul>
+      <p class="src"><a href="https://financemagnates.com/cryptocurrency/exchange/four-moves-in-six-weeks-how-payward-is-remaking-kraken-as-a-regulated-infrastructure-platform">Finance Magnates: four moves</a><a href="https://www.blockhead.co/2026/10/15/kraken-parent-payward-to-buy-lithuanias-saldo-bank/">Blockhead: Saldo</a><a href="https://www.businesswire.com/news/home/20260623714561/en/Payward-Secures-VASP-Registrations-in-British-Virgin-Islands-Expanding-its-Global-Licensing-Footprint">Business Wire: BVI</a></p>
+    </div>
+    <div class="panel">
+      <h3>Products to know</h3>
+      <ul>
+        <li><b>Kraken / Kraken Pro:</b> retail and pro spot, margin, futures. Capitalise.ai automation and Breakout prop trading now inside Pro.</li>
+        <li><b>xStocks:</b> tokenised US equities and ETFs, 1:1 backed, issued by Backed (now owned). Over $5B cumulative volume on Kraken by Dec 2025. Not offered to US persons.</li>
+        <li><b>NinjaTrader:</b> US futures retail platform, $1.5B deal.</li>
+        <li><b>Payward Services:</b> B2B infrastructure platform launched in 2026 (custody, trading, cards, stablecoin payments, embedded wallets). Reap and Magic feed into it.</li>
+        <li><b>Krak:</b> consumer payments/money app. <b>Ink:</b> Kraken's Ethereum L2. <b>USDG:</b> Paxos-issued stablecoin Kraken backs.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout"><b>The strategic story in one line:</b> Payward is turning Kraken from a crypto exchange into a licensed, vertically integrated financial infrastructure group (bank, derivatives clearing, payments, tokenisation), with acquisitions buying licences as much as technology. Reap is the first big Asia move under that plan.</div>
+</section>
+
+<!-- ============ BRIEF ============ -->
+<section class="view" id="v-brief" hidden aria-labelledby="h-brief">
+  <h2 id="h-brief">Interview brief</h2>
+  <div class="cols">
+    <div class="panel">
+      <h3>The role, per the job description</h3>
+      <dl class="kv">
+        <dt>Title</dt><dd>Senior Counsel – Product (Asia-Pacific). Remote, based in Hong Kong or Singapore.</dd>
+        <dt>Team</dt><dd>Regulatory Legal. "Practical legal generalist."</dd>
+        <dt>Reports to</dt><dd>Works under the direction of the "APAC regulatory lead".</dd>
+        <dt>Products</dt><dd>xStocks, OTC options, institutional custody and execution, cross-regional launches.</dd>
+        <dt>Owns</dt><dd>APAC regulatory workload: licence variations, client and broker agreements, licensing structure, regulator correspondence. Licensing in <b>Kazakhstan, Pakistan, Philippines</b>.</dd>
+        <dt>Supports</dt><dd>South Korea, Japan, Taiwan, Vietnam, Indonesia, Malaysia. Payward licensing in <b>Singapore and Hong Kong</b>.</dd>
+        <dt>Gatekeeps</dt><dd>New APAC outside counsel engagements: scope, cost, sign-off.</dd>
+        <dt>Wants</dt><dd>HK/SG/E&amp;W admission, 10+ yrs PQE in financial services regulatory, MAS or SFC/HKMA experience, managing local counsel, AML/CTF. Nice to have: virtual assets, derivatives/OTC options/tokenised instruments, change of control, payments/e-money/cards, a second APAC language. AI-assisted drafting is explicitly expected.</dd>
+      </dl>
+      <p class="src"><a href="https://www.workingnomads.com/jobs/senior-counsel-product-asia-pacific-kraken">Job listing (Working Nomads mirror)</a></p>
+    </div>
+    <div class="panel">
+      <h3>Jonathon Miller, Head of APAC Expansion</h3>
+      <ul>
+        <li>Led Bit Trade, the Australian exchange Kraken bought in Jan 2020. Brought on by Bit Trade's co-founders after getting into Bitcoin in 2013.</li>
+        <li>Named Kraken's first Managing Director for Australia (Jan 2020).</li>
+        <li>Described himself as a "(recovering) software engineer and product consultant" with a background in political economics and monetary history.</li>
+        <li>Founding member of the Blockchain Association of Australia.</li>
+        <li>By Nov 2024, "GM for Australia and Rest of World". Fronted the launch of the AFSL wholesale derivatives offering.</li>
+      </ul>
+      <div class="callout acc" style="margin-top:10px"><b>How to pitch it to him:</b> he's a builder and a commercial operator, not a lawyer. He'll want to know you can get products live market by market without legal becoming the bottleneck, and that you can tell him early which markets are realistic. Talk in sequencing, timelines and trade-offs.</div>
+      <p class="src"><a href="https://blog.kraken.com/news/meet-krakens-new-managing-director-for-australia-jonathon-miller">Kraken blog (2020)</a><a href="https://www.businesswire.com/news/home/20241103830617/en/Kraken-Launches-Licensed-Broker-Offering-for-Australian-Wholesale-Clients">Business Wire (2024)</a></p>
+    </div>
+  </div>
+
+  <div class="cols">
+    <div class="panel">
+      <h3>Your fit: lead with these</h3>
+      <ul>
+        <li><b>Tokenised securities = securities.</b> xStocks are the role's first-named product. Prospectus, disclosure, offering restrictions and selling-restriction analysis are DCM core skills. Frame xStocks distribution in APAC as a securities-offering problem you've done a hundred times.</li>
+        <li><b>Hong Kong qualified + Mandarin.</b> Native to the SFC/HKMA world, and you can work in Chinese-speaking markets (HK, Taiwan, plus counterpart dealings) without translation layers.</li>
+        <li><b>Structured products and derivatives exposure</b> for OTC options and wholesale derivatives (keep it to what you've actually done; the same narrative you built for the FICC applications).</li>
+        <li><b>Managing local counsel across many jurisdictions</b> is what DCM programme work is: selling restrictions across 20+ markets, cost control, scoping.</li>
+        <li><b>AI-assisted drafting.</b> The JD asks for it, and you built a document classification pipeline. Mention briefly.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>APAC product-legal issues to have a view on</h3>
+    <div class="cols">
+      <ul>
+        <li><b>Tokenised equities (xStocks):</b> in HK, tokenised securities are securities under the SFO, so retail distribution triggers offering rules and the SFC's tokenised-product circulars. Singapore has MAS SFA prospectus and capital markets licensing. Most of APAC needs a professional/accredited-investor-only route first.</li>
+        <li><b>OTC options and leverage:</b> retail leverage caps and bans (Japan's low crypto leverage cap, Australia's DDO and product intervention orders, HK SFC limits on VATP derivatives for retail).</li>
+        <li><b>Stablecoins:</b> HK Stablecoins Ordinance (in force Aug 2025, HKMA licensing for issuers and offer restrictions). MAS single-currency stablecoin framework. Japan's EPI regime. Relevant for Reap's card and payment flows.</li>
+      </ul>
+      <ul>
+        <li><b>Staking and earn:</b> HK SFC has allowed staking for licensed VATPs under conditions. Singapore restricts retail staking/lending for DPT services. Australia is moving under the new platform regime.</li>
+        <li><b>Marketing and finfluencers:</b> SFC/MAS restrictions on retail crypto marketing, Singapore's ban on public-area DPT ads, ASIC finfluencer guidance.</li>
+        <li><b>Licensing sequencing:</b> HK (SFC VATP plus AMLO; heavy, slow, retail allowed), SG (MAS DTSP and MPI; strict on overseas-only business since June 2025), JP (FSA registration plus JVCEA; Kraken has left twice). Reap gives a ready-made HK/SG payments platform to build from.</li>
+        <li><b>Lesson from ASIC v Bit Trade:</b> a $8M penalty for offering a margin extension product without a target market determination. Product governance is the core of the job; worth referencing constructively.</li>
+      </ul>
+    </div>
+    <p class="note">These regime summaries are high level and current to my knowledge. Check the latest SFC/MAS/FSA positions before the interview, especially on staking, stablecoins and Singapore's DTSP rules.</p>
+  </div>
+</section>
+
+<!-- ============ Q&A ============ -->
+<section class="view" id="v-qa" hidden aria-labelledby="h-qa">
+  <h2 id="h-qa">Q&amp;A prep</h2>
+  <h3>Likely panel questions</h3>
+  <div class="qlist" id="qa-likely"></div>
+  <h3 style="margin-top:10px">Questions for you to ask</h3>
+  <div class="cols">
+    <div class="panel">
+      <h3>For Jonathon</h3>
+      <ul>
+        <li>Which two or three APAC markets matter most to the business over the next 18 months, and what's blocking each today?</li>
+        <li>How does Reap change the APAC plan? Is it the licensing base for Payward Services in HK and Singapore, or a separate track?</li>
+        <li>Where has legal been a bottleneck for APAC launches so far, and what would "good" look like from this role in the first six months?</li>
+        <li>Kazakhstan, Pakistan and the Philippines are in the JD. What's the commercial thesis for those, and are they live applications already?</li>
+        <li>How do you decide between going in licensed, going in through a partner, or waiting?</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>On building the first Asia legal function</h3>
+      <ul>
+        <li>Who is the APAC regulatory lead the role works under, and how do the Australia AGC and this role split the region?</li>
+        <li>What budget and decision rights come with gatekeeping outside counsel?</li>
+        <li>Is there a plan to grow an Asia legal team, and would this role shape it?</li>
+        <li>How do APAC product launches get approved today: a product council, a global legal sign-off, a compliance gate?</li>
+        <li>How do legal and compliance divide work in APAC, particularly on AML/CTF and licensing applications?</li>
+        <li>With the IPO now pointing to 2027, what pre-IPO regulatory clean-up or licensing goals sit with APAC?</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="wrap">Compiled 6 Nov 2026 from public reporting and company releases; sources are linked by each item. Figures can change: check prices, statuses and regulatory positions before relying on them.</footer>
+
+<script>
+const S = {
+  kpr:{t:"Kraken press release",u:"https://www.kraken.com/press/releases/kraken-acquires-staked-to-support-growth-and-resilience"},
+};
+const DEALS = [
+ {id:"bittrade",name:"Bit Trade",date:"2020-01-14",close:"2020-01",region:"APAC",hq:"Australia",founders:"Founded by two co-founders; Jonathon Miller led the business",sector:"Retail exchange",what:"One of Australia's longest-running crypto exchanges, AUSTRAC-registered. Became Kraken's Australian operating entity (Bit Trade Pty Ltd).",price:null,priceText:"Undisclosed",status:"Integrated",statusNote:"Operates Kraken in Australia. Defendant in the ASIC margin extension case ($8M penalty, Dec 2024).",why:"Entry to Australia and the start of Kraken's APAC push.",older:true,src:[["Kraken blog","https://blog.kraken.com/news/kraken-acquires-australias-longest-running-crypto-service-provider-bit-trade"],["ASIC 24-274MR","https://www.asic.gov.au/about-asic/news-centre/find-a-media-release/2024-releases/24-274mr-kraken-crypto-exchange-operator-to-pay-8-million-following-asic-enforcement-action"]]},
+ {id:"staked",name:"Staked",date:"2021-12-21",close:"Dec 2021",region:"North America",hq:"United States",founders:"Tim Ogilvie (CEO)",sector:"Staking",what:"Non-custodial staking platform for institutions: earn staking yield without giving up custody.",price:null,priceText:"Undisclosed",status:"Integrated",statusNote:"Folded into Kraken's staking and institutional offering.",why:"Added networks and a non-custodial option alongside Kraken's custodial staking. Kraken called it one of the largest crypto deals to date.",src:[["Kraken press release","https://www.kraken.com/press/releases/kraken-acquires-staked-to-support-growth-and-resilience"],["The Block","https://www.theblock.co/linked/128294/crypto-exchange-kraken-acquires-staking-platform-staked"]]},
+ {id:"bcm",name:"Coin Meester (BCM)",date:"2023-10-05",close:"Sep 2024",region:"Europe",hq:"Netherlands",founders:"Not confirmed in sources",sector:"Retail exchange",what:"One of the oldest registered crypto brokers in the Netherlands.",price:null,priceText:"Undisclosed",status:"Integrated",statusNote:"Clients migrated to Kraken products.",why:"Netherlands growth plus VASP registrations in France and Poland, ahead of MiCA.",src:[["Business Wire (announce)","https://www.businesswire.com/news/home/20231005480065/en/Kraken-to-Acquire-Dutch-Crypto-Broker-BCM-Furthers-Commitment-to-Growing-European-Business"],["The Block (close)","https://www.theblock.co/news/markets/2024-09-24-kraken-expands-european-footprint-with-acquisition-of-dutch-crypto-broker-bcm-317836"]]},
+ {id:"ninja",name:"NinjaTrader",date:"2025-03-20",close:"By 1 May 2025",region:"North America",hq:"United States",founders:"CEO Marty Franchi; acquired from Long Ridge Equity Partners",sector:"Derivatives & trading",what:"Major US retail futures trading platform (CFTC-registered FCM).",price:1500,priceText:"$1.5B",status:"Operating brand",statusNote:"Still runs as NinjaTrader. Now offers crypto and CME crypto futures.",why:"Kraken's largest deal: TradFi derivatives users plus a US futures licence stack.",src:[["Finance Magnates","https://financemagnates.com/cryptocurrency/kraken-completes-15b-ninjatrader-acquisition-as-funded-accounts-jump-26-in-q1/"]]},
+ {id:"capitalise",name:"Capitalise.ai",date:"2025-08-20",close:"Aug 2025",region:"Middle East",hq:"Israel",founders:"Not confirmed in sources",sector:"Trading tools",what:"No-code, natural-language trading automation: write a strategy in plain English and it executes.",price:null,priceText:"Undisclosed",status:"Integrated",statusNote:"Built into Kraken Pro.",why:"Automation tools to keep active traders on Kraken Pro.",src:[["Business Wire","https://www.businesswire.com/news/home/20250820275978/en/Kraken-Acquires-Capitalise.ai-to-Bring-No-Code-Trading-Automation-to-Kraken-Pro"],["Crowdfund Insider","https://www.crowdfundinsider.com/2025/08/247795-kraken-announces-acquisition-of-israel-based-no-code-trading-automation-firm-capitalise-ai/"]]},
+ {id:"breakout",name:"Breakout",date:"2025-09-04",close:"Sep 2025",region:"North America",hq:"Not confirmed",founders:"Co-founded by \"Mayne\" and \"Cred\" (pseudonymous crypto traders); CEO Alex Miningham",sector:"Trading tools",what:"Crypto prop trading firm launched in 2023: traders pass an evaluation, then trade firm capital (up to $200K notional, up to 90% profit share).",price:null,priceText:"Undisclosed",status:"Integrated",statusNote:"Runs as Kraken's prop trading offering inside Kraken Pro.",why:"First major exchange to offer prop trading. Customer acquisition for active traders.",src:[["Business Wire","https://www.businesswire.com/news/home/20250904012956/en/Kraken-Completes-Major-Acquisition-of-Breakout-to-Offer-Prop-Trading-to-Clients-Globally"],["The Block","https://www.theblock.co/post/369612/kraken-breakout-acquisition"],["Blockworks","https://blockworks.com/news/kraken-acquires-breakout"]]},
+ {id:"small",name:"Small Exchange",date:"2025-10-15",close:"Late 2025",region:"North America",hq:"Chicago, US",founders:"Acquired from IG Group",sector:"Derivatives & trading",what:"CFTC-licensed Designated Contract Market (DCM): an exchange licence for listing US derivatives.",price:100,priceText:"$100M",status:"Integrated",statusNote:"Part of Payward's US derivatives stack, alongside Bitnomial.",why:"Lets Kraken design and list its own US exchange-traded derivatives.",src:[["Business Wire","https://www.businesswire.com/news/home/20251015286360/en/Kraken-Acquires-a-CFTC-regulated-Designated-Contract-Market-Expanding-Derivatives-Footprint-in-the-U.S.-Market"]]},
+ {id:"backed",name:"Backed Finance",date:"2025-12-02",close:"Pending at announce",region:"Europe",hq:"Switzerland",founders:"Founded 2021; founder names not confirmed in sources",sector:"Tokenisation",what:"Issuer of 1:1-backed tokenised stocks and ETFs (about 71 assets) and the engine behind xStocks. Roughly 23% share of tokenised stocks (RWA.xyz).",price:null,priceText:"Undisclosed",status:"Integrated",statusNote:"Gives Payward full control of xStocks issuance.",why:"Owning the issuer gives tighter control of tokenised equities. Directly relevant: xStocks is the first product named in your JD.",src:[["The Block","https://www.theblock.co/news/business/2025-12-02-kraken-to-buy-backed-finance-in-tokenization-push-ahead-of-ipo-381095"],["Payward release","https://www.payward.com/press-release/kraken-acquires-backed-xstocks-expansion"]]},
+ {id:"magna",name:"Magna",date:"2026-02-18",close:"Feb 2026",region:"North America",hq:"United States",founders:"Not confirmed in sources (Y Combinator W22)",sector:"Token infrastructure",what:"Token management: vesting, distribution and cap-table tracking for crypto projects. Peaked around $60B TVL.",price:null,priceText:"Undisclosed (last valued $70M, PitchBook)",status:"Integrated",statusNote:"Feeds Payward's issuer and token services.",why:"Early relationships with token issuers before they list. Payward's sixth deal in 12 months.",src:[["Fortune","https://fortune.com/2026/02/18/kraken-acquires-magna-token-management-platform/"],["Blockhead","https://www.blockhead.co/2026/02/19/kraken-acquires-token-manager-magna-as-exchange-gears-up-for-ipo"]]},
+ {id:"bitnomial",name:"Bitnomial",date:"2026-04-17",close:"1 May 2026",region:"North America",hq:"Chicago, US",founders:"Luke Hoersten (founder & CEO) — verify",sector:"Derivatives & trading",what:"The first fully CFTC-licensed crypto-native derivatives company: FCM, DCM and DCO.",price:550,priceText:"Up to $550M (cash + stock)",status:"Operating brand",statusNote:"Keeps its licences and third-party business. Enables US perps, options and spot margin on Kraken and NinjaTrader.",why:"Completes a fully owned US derivatives stack (clearing included).",src:[["Financial IT","https://financialit.net/news/cryptocurrencies/payward-completes-acquisition-bitnomial-first-fully-cftc-licensed-crypto"],["Finance Magnates","https://financemagnates.com/cryptocurrency/exchange/four-moves-in-six-weeks-how-payward-is-remaking-kraken-as-a-regulated-infrastructure-platform"]]},
+ {id:"reap",name:"Reap Technologies",date:"2026-05-07",close:"1 Jul 2026",region:"APAC",hq:"Hong Kong",founders:"Led by Daren Guo (built Stripe's APAC business) and Kevin Kang (ex-investment banker)",sector:"Payments & stablecoins",what:"Stablecoin-based card issuing and cross-border B2B payments, licensed across APAC, MENA and LatAm.",price:600,priceText:"Up to $600M (cash + stock)",status:"Integrated",statusNote:"Closed after Hong Kong and Singapore approvals. Becomes the cards and stablecoin-payments arm of Payward Services.",why:"Payward's first Asia infrastructure deal and its third largest. Sethi says Asia is the fastest-growing region outside Europe. <b>Most relevant deal for this interview.</b>",src:[["The Block","https://www.theblock.co/post/400407/kraken-parent-payward-to-acquire-hong-kong-stablecoin-firm-reap-for-600-million"],["Decrypt","https://decrypt.co/367094/kraken-parent-acquires-asian-stablecoin-firm-reap-600-million"],["Finance Magnates (close)","https://www.financemagnates.com/cryptocurrency/kraken-parent-pushes-ipo-to-q2-2027-at-earliest/"]]},
+ {id:"magic",name:"Magic Labs (wallet business)",date:"2026-07-27",close:"Expected within weeks",region:"North America",hq:"United States",founders:"Co-founder Sean Li",sector:"Wallets",what:"Embedded-wallet technology (an asset purchase, not the company). Magic Labs continues separately, renamed Newton Labs.",price:null,priceText:"Undisclosed",status:"Integrated",statusNote:"Being folded into Payward Services.",why:"Embedded wallets for B2B clients building on Payward's infrastructure.",src:[["Report (Sandmark, via mirror)","https://san-1510.aid.brainsum.com/news/top-news/kraken-parent-buy-magic-wallet-business-ipo-plans-remain-hold"],["crypto.news","https://crypto.news/payward-expands-kraken-with-2b-acquisition-push/"]]},
+ {id:"saldo",name:"Saldo Bank",date:"2026-10-14",close:"Expected 2027",region:"Europe",hq:"Lithuania (holdco Saldo Finance Oy, Finland)",founders:"President Jarkko Mäensivu",sector:"Banking",what:"EU online bank, licensed by the ECB and supervised by the Bank of Lithuania. Deposits, consumer and SME loans, cards in LT/FI/SE/DE.",price:null,priceText:"Undisclosed",status:"Pending",statusNote:"Needs change-of-control approval from the Bank of Lithuania and the ECB.",why:"Would make Payward the first crypto-native firm to own an EU bank: interest-bearing deposits, lending, SEPA.",src:[["Fortune","https://fortune.com/2026/10/14/kraken-parent-company-payward-first-crypto-firm-european-bank-purchase/"],["Blockhead","https://www.blockhead.co/2026/10/15/kraken-parent-payward-to-buy-lithuanias-saldo-bank/"]]}
+];
+
+const MARKETS = [
+ {m:"Australia",tag:["Live","p-ok"],body:["Bit Trade Pty Ltd operates Kraken, AUSTRAC-registered digital currency exchange.","AFSL broker for wholesale crypto derivatives (Nov 2024).","ASIC v Bit Trade: $8M penalty (Dec 2024) for a margin extension product offered without a target market determination.","New digital asset platform/custody licensing regime is coming in. Check its current stage.","The existing APAC lawyer (an AGC) sits here."],src:[["ASIC","https://www.asic.gov.au/about-asic/news-centre/find-a-media-release/2024-releases/24-274mr-kraken-crypto-exchange-operator-to-pay-8-million-following-asic-enforcement-action"],["Business Wire","https://www.businesswire.com/news/home/20241103830617/en/Kraken-Launches-Licensed-Broker-Offering-for-Australian-Wholesale-Clients"]]},
+ {m:"Hong Kong",tag:["Via Reap","p-acc"],body:["Reap (HK HQ) acquired; closed 1 Jul 2026 after Hong Kong approvals.","No Kraken SFC VATP licence found in public reporting.","JD: role supports Payward licensing in Hong Kong.","Context: SFC VATP regime (retail allowed, staking permitted under conditions). Stablecoins Ordinance in force since Aug 2025."],src:[["The Block","https://www.theblock.co/post/400407/kraken-parent-payward-to-acquire-hong-kong-stablecoin-firm-reap-for-600-million"]]},
+ {m:"Singapore",tag:["Via Reap / pursuing","p-acc"],body:["Reap deal needed Singapore approvals.","No Kraken MAS licence found in public reporting. JD: role supports Payward licensing in Singapore.","Kraken is hiring a Singapore Policy &amp; Government Relations manager.","Context: MAS DTSP rules (from June 2025) sharply limit overseas-only crypto business run from Singapore."],src:[["Finance Magnates","https://financemagnates.com/cryptocurrency/exchange/four-moves-in-six-weeks-how-payward-is-remaking-kraken-as-a-regulated-infrastructure-platform"],["SG policy role","https://builtinsingapore.com/job/manager-policy-government-relations-singapore/10441343"]]},
+ {m:"Japan",tag:["Exited","p-risk"],body:["Registered with the FSA in 2020 (Payward Asia), then left in Jan 2023, its second exit after 2018.","No re-entry found. JD lists Japan as a support market.","A sensitive point: good to ask about appetite to return, but don't assume."],src:[["Cointelegraph (exit)","https://cointelegraph.com/news/kraken-quits-japan-for-second-time-blaming-a-weak-crypto-market"]]},
+ {m:"Kazakhstan · Pakistan · Philippines",tag:["Role owns","p-warn"],body:["The JD says you would own geography-specific licensing here.","Kazakhstan: AIFC/AFSA regime in Astana. Pakistan: new virtual asset regulator (PVARA, 2025). Philippines: SEC CASP rules (2025) plus BSP VASP rules.","Read up on all three before the panel. Expect a question on how you'd approach an unfamiliar regime."],src:[["Job listing","https://www.workingnomads.com/jobs/senior-counsel-product-asia-pacific-kraken"]]},
+ {m:"South Korea · Taiwan · Vietnam · Indonesia · Malaysia",tag:["Support","p-mute"],body:["JD support markets. No public Kraken licences found.","Korea: VASP reporting under the Act on Reporting and Using Specified Financial Transaction Information, and local-bank real-name accounts needed. Taiwan: FSC VASP registration, with a licensing law coming. Indonesia: OJK took over crypto supervision in 2025. Vietnam: pilot licensing for crypto exchanges in 2025."],src:[["Job listing","https://www.workingnomads.com/jobs/senior-counsel-product-asia-pacific-kraken"]]},
+ {m:"UAE (adjacent hub)",tag:["Pending","p-warn"],body:["VARA preliminary authorisation (broker-dealer, investment and management) for Payward FZCO, May 2026. Full licence pending.","Often run alongside APAC. Worth asking where the Middle East sits in the reporting lines."],src:[["Finance Magnates","https://financemagnates.com/cryptocurrency/exchange/four-moves-in-six-weeks-how-payward-is-remaking-kraken-as-a-regulated-infrastructure-platform"]]}
+];
+
+const QA = [
+ ["Why Kraken, and why leave private practice now?","<p>Tie it to Payward's shift into licensed infrastructure (bank, clearing, payments, tokenisation). That is a capital-markets-shaped business, and you want to build in-house where products are made. Mention that you're moving home to Hong Kong anyway, and that being the first Asia hire is the attraction, not a risk.</p>"],
+ ["You're a DCM lawyer. This is a regulatory role. Why are you the right fit?","<p>Offering regimes are financial regulation. Prospectus and selling restrictions, professional investor exemptions and product governance are exactly what decides where xStocks and OTC options can go. Add your HK admission and Mandarin.</p>"],
+ ["How would you take xStocks into a new APAC market?","<p>Classify first (security? collective investment scheme? derivative?). Then check the licensing route (local licence, cross-border exemption, partner), the investor-type gate (professional/accredited first), and disclosure, marketing and DDO-style product governance. Commission local counsel with a fixed scope and budget, give the business a go/no-go with conditions, then sequence by commercial value.</p>"],
+ ["We need licensing in Kazakhstan, Pakistan and the Philippines. Where do you start?","<p>Commercial priority first: ask Jonathon. Then a regime map for each market: licence type, capital, local presence, timeline, fit with change of control. Instruct one trusted firm per market with a capped first phase. Set up a tracker and regulator calendar. Flag early where a partner model beats a licence.</p>"],
+ ["Tell us about a time you said no to the business, or found a way to yes.","<p>Use a DCM example where a selling restriction or disclosure issue threatened a deal and you restructured (investor gate, wording, jurisdiction carve-out) to close on time. Make it about the alternative you found, not the no.</p>"],
+ ["How do you manage outside counsel spend across 10+ markets?","<p>Scope letters with phased caps, a panel of preferred firms, reuse of memos across markets, AI-assisted first drafts in-house, and only paying firms for local judgement. You've run multi-jurisdiction selling-restriction exercises.</p>"],
+ ["What do you think of the ASIC margin extension case?","<p>Be measured. Its lesson is that product classification and target market determination have to happen before launch, and that the legal function's job is to build that gate into the launch process without slowing it. That's what you would set up across APAC. Keep it constructive and forward-looking.</p>"],
+ ["How do you work across time zones with a US-heavy legal team?","<p>Async-first writing (one-page decision memos), clear decision owners, and overlap windows. Mention your London-HK experience since 2021.</p>"],
+ ["How would you use AI in this role?","<p>The JD explicitly calls for it. Mention licensing gap analyses, first-draft client terms and regulator correspondence, and multi-market comparison tables, all with human review. Your document classification pipeline is a concrete example.</p>"],
+ ["What do you know about our recent APAC moves?","<p>Reap ($600M, HK, closed July 2026) as the base for B2B payments in Asia, with Hong Kong and Singapore approvals behind it. Asia is the fastest-growing region outside Europe, per Sethi. Australia is the established market. The JD signals frontier licensing in Central/South/Southeast Asia.</p>"]
+];
+
+// ---------- helpers ----------
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmtDate = d => new Date(d+"T00:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});
+const statusPill = s => ({"Integrated":"p-ok","Operating brand":"p-acc","Pending":"p-warn"}[s]||"p-mute");
+
+// ---------- stats ----------
+function renderStats(){
+  const inWin = DEALS.filter(d=>!d.older);
+  const disclosed = inWin.filter(d=>d.price);
+  const total = disclosed.reduce((a,d)=>a+d.price,0);
+  const apac = inWin.filter(d=>d.region==="APAC").length;
+  $("#stats").innerHTML = `
+    <div class="stat"><b>${inWin.length}</b><span>Deals announced, Dec 2021 – Oct 2026</span></div>
+    <div class="stat"><b>$${(total/1000).toFixed(2)}B</b><span>Disclosed value (${disclosed.length} deals, incl. "up to")</span></div>
+    <div class="stat"><b>${inWin.length-disclosed.length}</b><span>Undisclosed price</span></div>
+    <div class="stat"><b>${apac}</b><span>APAC target in window (Reap)</span></div>`;
+}
+
+// ---------- filters ----------
+function fillSelect(id, vals){ const el=$(id); vals.forEach(v=>{const o=document.createElement("option");o.value=v;o.textContent=v;el.appendChild(o);}); }
+fillSelect("#f-year",[...new Set(DEALS.map(d=>d.date.slice(0,4)))].sort().reverse());
+fillSelect("#f-region",[...new Set(DEALS.map(d=>d.region))].sort());
+fillSelect("#f-sector",[...new Set(DEALS.map(d=>d.sector))].sort());
+fillSelect("#f-status",[...new Set(DEALS.map(d=>d.status))].sort());
+
+let sortK="date", sortDir=-1, openId=null;
+function filtered(){
+  const q=$("#f-q").value.trim().toLowerCase(), y=$("#f-year").value, r=$("#f-region").value, s=$("#f-sector").value, st=$("#f-status").value, older=$("#f-older").checked;
+  return DEALS.filter(d=>(older||!d.older)&&(!y||d.date.startsWith(y))&&(!r||d.region===r)&&(!s||d.sector===s)&&(!st||d.status===st)&&
+    (!q||[d.name,d.founders,d.what,d.hq,d.sector].join(" ").toLowerCase().includes(q)));
+}
+function sorted(list){
+  return list.slice().sort((a,b)=>{
+    let x=a[sortK], z=b[sortK];
+    if(sortK==="price"){x=a.price??-1; z=b.price??-1;}
+    return (x>z?1:x<z?-1:0)*sortDir;
+  });
+}
+
+// ---------- table ----------
+function renderTable(){
+  const rows = sorted(filtered());
+  const tb = $("#deals tbody");
+  if(!rows.length){ tb.innerHTML = `<tr><td colspan="6" class="note">No deals match these filters. Clear filters to see all deals.</td></tr>`; return; }
+  tb.innerHTML = rows.map(d=>{
+    const main = `<tr class="row${d.older?" older":""}" tabindex="0" data-id="${d.id}" aria-expanded="${openId===d.id}">
+      <td class="num">${fmtDate(d.date)}</td>
+      <td><div class="name">${esc(d.name)}</div><div class="sub">${esc(d.what.split(":")[0].split(".")[0])}</div></td>
+      <td>${esc(d.region)}<div class="sub">${esc(d.hq)}</div></td>
+      <td>${esc(d.sector)}</td>
+      <td class="${d.price?"price-d":"price-u"}">${d.price?esc(d.priceText):"Undisclosed"}</td>
+      <td><span class="pill ${statusPill(d.status)}">${esc(d.status)}</span>${d.older?' <span class="pill p-mute">Pre-window</span>':""}</td></tr>`;
+    const det = openId===d.id ? `<tr class="detail"><td colspan="6">
+      <div class="dgrid">
+        <div><div class="k">What it does</div>${esc(d.what)}</div>
+        <div><div class="k">Founders / leadership</div>${esc(d.founders)}${/verify/.test(d.founders)?' <span class="flag">(verify)</span>':""}</div>
+        <div><div class="k">Price</div>${esc(d.priceText)}</div>
+        <div><div class="k">Announced → closed</div>${fmtDate(d.date)} → ${esc(d.close)}</div>
+        <div><div class="k">Why Kraken bought it</div>${d.why}</div>
+        <div><div class="k">Current status</div>${esc(d.statusNote)}</div>
+      </div>
+      <div class="src"><span class="k">Sources</span><br>${d.src.map(s=>`<a href="${s[1]}" target="_blank" rel="noopener">${esc(s[0])}</a>`).join("")}</div>
+    </td></tr>` : "";
+    return main+det;
+  }).join("");
+}
+$("#deals tbody").addEventListener("click",e=>{ if(e.target.closest("a")) return; const tr=e.target.closest("tr.row"); if(!tr) return; openId = openId===tr.dataset.id?null:tr.dataset.id; renderAll(); });
+$("#deals tbody").addEventListener("keydown",e=>{ if((e.key==="Enter"||e.key===" ")&&e.target.matches("tr.row")){e.preventDefault(); e.target.click(); const id=e.target.dataset.id; requestAnimationFrame(()=>{const r=document.querySelector(`tr.row[data-id="${id}"]`); r&&r.focus();});} });
+document.querySelectorAll("#deals th").forEach(th=>th.querySelector("button").addEventListener("click",()=>{
+  const k=th.dataset.k; if(sortK===k) sortDir*=-1; else {sortK=k; sortDir=(k==="date"||k==="price")?-1:1;}
+  document.querySelectorAll("#deals th").forEach(h=>h.removeAttribute("aria-sort"));
+  th.setAttribute("aria-sort",sortDir===1?"ascending":"descending"); renderTable();
+}));
+
+// ---------- timeline ----------
+function renderTimeline(){
+  const list = filtered().slice().sort((a,b)=>a.date<b.date?-1:1);
+  const older = $("#f-older").checked;
+  const start = new Date(older?"2019-10-01":"2021-10-01"), end = new Date("2027-01-01");
+  const W=1000, H=190, padL=20, padR=20, axisY=120;
+  const x = d => padL + (new Date(d)-start)/(end-start)*(W-padL-padR);
+  const r = p => p ? 5 + Math.sqrt(p)/Math.sqrt(1500)*16 : 6;
+  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Timeline of acquisitions">`;
+  svg += `<line x1="${padL}" x2="${W-padR}" y1="${axisY}" y2="${axisY}" stroke="var(--line)" stroke-width="1.5"/>`;
+  for(let y=start.getFullYear()+1; y<=2026; y++){ const xx=x(`${y}-01-01`); svg+=`<line x1="${xx}" x2="${xx}" y1="${axisY-4}" y2="${axisY+4}" stroke="var(--muted)"/><text x="${xx}" y="${axisY+20}" text-anchor="middle">${y}</text>`; }
+  let lastX=-999, lane=0;
+  list.forEach(d=>{
+    const cx=x(d.date), rad=r(d.price);
+    lane = (cx-lastX<95) ? (lane+1)%3 : 0; lastX=cx;
+    const ly = axisY - 30 - lane*26;
+    const fill = d.region==="APAC" ? "var(--accent)" : d.price ? "var(--ok)" : "var(--surface)";
+    const stroke = d.region==="APAC" ? "var(--accent)" : d.price ? "var(--ok)" : "var(--warn)";
+    svg += `<line x1="${cx}" x2="${cx}" y1="${ly+4}" y2="${axisY-rad}" stroke="var(--line)"/>`;
+    svg += `<circle cx="${cx}" cy="${axisY}" r="${rad}" fill="${fill}" fill-opacity="${d.price||d.region==="APAC"?0.85:1}" stroke="${stroke}" stroke-width="2"><title>${esc(d.name)}: ${esc(d.priceText)}</title></circle>`;
+    svg += `<text class="lbl" x="${cx}" y="${ly}" text-anchor="middle">${esc(d.name.replace(/ \(.*\)/,""))}</text>`;
+  });
+  svg += `</svg>`;
+  $("#timeline").innerHTML = list.length ? svg : `<p class="note">No deals match these filters.</p>`;
+}
+
+function renderAll(){ renderTable(); renderTimeline(); }
+["#f-q","#f-year","#f-region","#f-sector","#f-status","#f-older"].forEach(id=>$(id).addEventListener("input",()=>{openId=null;renderAll();}));
+$("#f-reset").addEventListener("click",()=>{["#f-q","#f-year","#f-region","#f-sector","#f-status"].forEach(id=>$(id).value=""); $("#f-older").checked=false; openId=null; renderAll();});
+
+// ---------- markets & QA ----------
+$("#markets").innerHTML = MARKETS.map(m=>`<div class="card"><div class="head"><h3>${m.m}</h3><span class="pill ${m.tag[1]}">${m.tag[0]}</span></div><ul>${m.body.map(b=>`<li>${b}</li>`).join("")}</ul><div class="src">${m.src.map(s=>`<a href="${s[1]}" target="_blank" rel="noopener">${esc(s[0])}</a>`).join("")}</div></div>`).join("");
+$("#qa-likely").innerHTML = QA.map(q=>`<details class="q"><summary>${esc(q[0])}</summary><div class="a">${q[1]}</div></details>`).join("");
+
+// ---------- routing ----------
+const VIEWS=["deals","apac","company","brief","qa"];
+function route(){
+  const v = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "deals";
+  VIEWS.forEach(n=>{ $("#v-"+n).hidden = n!==v; });
+  document.querySelectorAll("nav.tabs a").forEach(a=>a.setAttribute("aria-current", a.getAttribute("href")==="#"+v ? "page" : "false"));
+}
+window.addEventListener("hashchange",()=>{route(); window.scrollTo({top:0});});
+renderStats(); renderAll(); route();
+</script>
+
+</body>
+</html>
